@@ -37,12 +37,12 @@ def validate_config(config):
 
 
 # pylint: disable=fixme
-def column_type(schema_property):
+def column_type(schema_property, prefer_json_over_jsonb):
     property_type = schema_property['type']
     property_format = schema_property['format'] if 'format' in schema_property else None
     col_type = 'character varying'
     if 'object' in property_type or 'array' in property_type:
-        col_type = 'jsonb'
+        col_type = 'json' if prefer_json_over_jsonb is True else 'jsonb'
 
     # Every date-time JSON value is currently mapped to TIMESTAMP WITHOUT TIME ZONE
     #
@@ -78,8 +78,8 @@ def safe_column_name(name):
     return '"{}"'.format(name).lower()
 
 
-def column_clause(name, schema_property):
-    return '{} {}'.format(safe_column_name(name), column_type(schema_property))
+def column_clause(name, schema_property, prefer_json_over_jsonb):
+    return '{} {}'.format(safe_column_name(name), column_type(schema_property, prefer_json_over_jsonb))
 
 
 def flatten_key(k, parent_key, sep):
@@ -210,7 +210,8 @@ class DbSync:
 
         # Validate connection configuration
         config_errors = validate_config(connection_config)
-
+        self.logger.info("Hello from Dejan")
+        self.logger.info("Prefer json over jsonb: %s", connection_config.get('prefer_json_over_jsonb'))
         # Exit if config has errors
         if len(config_errors) > 0:
             self.logger.error("Invalid configuration:\n   * %s", '\n   * '.join(config_errors))
@@ -433,10 +434,12 @@ class DbSync:
 
     def create_table_query(self, table_name=None, is_temporary=False):
         stream_schema_message = self.stream_schema_message
+        prefer_json_over_jsonb = self.connection_config.get('prefer_json_over_jsonb')
         columns = [
             column_clause(
                 name,
-                schema
+                schema,
+                prefer_json_over_jsonb
             )
             for (name, schema) in self.flatten_schema.items()
         ]
@@ -528,6 +531,7 @@ class DbSync:
                                                                      self.schema_name.lower()))
 
     def update_columns(self):
+        prefer_json_over_jsonb = self.connection_config.get('prefer_json_over_jsonb')
         stream_schema_message = self.stream_schema_message
         stream = stream_schema_message['stream']
         table_name = self.table_name(stream, without_schema=True)
@@ -553,7 +557,7 @@ class DbSync:
             ))
             for (name, properties_schema) in self.flatten_schema.items()
             if name.lower() in columns_dict and
-            columns_dict[name.lower()]['data_type'].lower() != column_type(properties_schema).lower()
+            columns_dict[name.lower()]['data_type'].lower() != column_type(properties_schema, prefer_json_over_jsonb).lower()
         ]
 
         for (column_name, column) in columns_to_replace:
