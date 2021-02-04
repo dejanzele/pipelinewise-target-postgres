@@ -210,7 +210,6 @@ class DbSync:
 
         # Validate connection configuration
         config_errors = validate_config(connection_config)
-        self.logger.info("Hello from Dejan")
         self.logger.info("Prefer json over jsonb: %s", connection_config.get('prefer_json_over_jsonb'))
         # Exit if config has errors
         if len(config_errors) > 0:
