@@ -540,7 +540,8 @@ class DbSync:
         columns_to_add = [
             column_clause(
                 name,
-                properties_schema
+                properties_schema,
+                prefer_json_over_jsonb
             )
             for (name, properties_schema) in self.flatten_schema.items()
             if name.lower() not in columns_dict
@@ -552,7 +553,8 @@ class DbSync:
         columns_to_replace = [
             (safe_column_name(name), column_clause(
                 name,
-                properties_schema
+                properties_schema,
+                prefer_json_over_jsonb
             ))
             for (name, properties_schema) in self.flatten_schema.items()
             if name.lower() in columns_dict and
