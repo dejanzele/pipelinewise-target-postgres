@@ -42,6 +42,7 @@ def column_type(schema_property, prefer_json_over_jsonb):
     property_format = schema_property['format'] if 'format' in schema_property else None
     col_type = 'character varying'
     if 'object' in property_type or 'array' in property_type:
+        print('col type is ', 'json' if prefer_json_over_jsonb is True else 'jsonb')
         col_type = 'json' if prefer_json_over_jsonb is True else 'jsonb'
 
     # Every date-time JSON value is currently mapped to TIMESTAMP WITHOUT TIME ZONE
