@@ -42,8 +42,7 @@ def column_type(schema_property, prefer_json_over_jsonb):
     property_format = schema_property['format'] if 'format' in schema_property else None
     col_type = 'character varying'
     if 'object' in property_type or 'array' in property_type:
-        print('col type is ', 'json' if prefer_json_over_jsonb is True else 'jsonb')
-        col_type = 'json' if prefer_json_over_jsonb is True else 'jsonb'
+        col_type = 'json' if prefer_json_over_jsonb else 'jsonb'
 
     # Every date-time JSON value is currently mapped to TIMESTAMP WITHOUT TIME ZONE
     #
@@ -434,7 +433,7 @@ class DbSync:
 
     def create_table_query(self, table_name=None, is_temporary=False):
         stream_schema_message = self.stream_schema_message
-        prefer_json_over_jsonb = self.connection_config.get('prefer_json_over_jsonb')
+        prefer_json_over_jsonb = self.connection_config.get('prefer_json_over_jsonb') == 'true'
         columns = [
             column_clause(
                 name,
@@ -531,7 +530,7 @@ class DbSync:
                                                                      self.schema_name.lower()))
 
     def update_columns(self):
-        prefer_json_over_jsonb = self.connection_config.get('prefer_json_over_jsonb')
+        prefer_json_over_jsonb = self.connection_config.get('prefer_json_over_jsonb') == 'true'
         stream_schema_message = self.stream_schema_message
         stream = stream_schema_message['stream']
         table_name = self.table_name(stream, without_schema=True)
@@ -561,7 +560,7 @@ class DbSync:
             if name.lower() in columns_dict and
             columns_dict[name.lower()]['data_type'].lower() != column_type(properties_schema, prefer_json_over_jsonb).lower()
         ]
-
+        self.logger.info("columns to add: %s", columns_to_replace)
         for (column_name, column) in columns_to_replace:
             self.version_column(column_name, stream)
             self.add_column(column, stream)
